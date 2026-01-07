@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { PageHeader } from "@/components/ui/page-header";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -17,17 +16,21 @@ import {
   MapPin,
   AlertCircle,
   Coffee,
+  CheckCircle2,
+  XCircle,
+  FileText,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 interface GeolocationPosition {
   lat: number;
   lng: number;
 }
 
-// Office location (mock - you would configure this in settings)
-const OFFICE_LOCATION = { lat: 28.6139, lng: 77.2090 }; // Delhi
-const GEOFENCE_RADIUS = 500; // meters
+// Set to null to disable geofencing
+const OFFICE_LOCATION: { lat: number; lng: number } | null = null;
+const GEOFENCE_RADIUS = 500;
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371e3;
@@ -44,6 +47,15 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c;
 }
 
+const WORK_DAY_HOURS = 8;
+const WORK_DAY_SECONDS = WORK_DAY_HOURS * 3600;
+
+const recentActivity = [
+  { type: "attendance", date: "Jan 6, 2026", status: "present", detail: "09:00 AM - 06:05 PM", hours: "9h 5m" },
+  { type: "leave", date: "Jan 3, 2026", status: "approved", detail: "Casual Leave", days: "1 day" },
+  { type: "attendance", date: "Jan 2, 2026", status: "present", detail: "09:15 AM - 06:00 PM", hours: "8h 45m", isLate: true },
+];
+
 export default function EmployeeDashboard() {
   const { user } = useAuth();
   const [clockedIn, setClockedIn] = useState(false);
@@ -58,7 +70,7 @@ export default function EmployeeDashboard() {
   const [isWithinGeofence, setIsWithinGeofence] = useState(false);
   const [checkingLocation, setCheckingLocation] = useState(false);
 
-  // Update elapsed time every second (continues during break)
+  // Update elapsed time every second
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (clockedIn && clockInTime) {
@@ -83,6 +95,13 @@ export default function EmployeeDashboard() {
   }, [onBreak]);
 
   const checkGeolocation = useCallback(() => {
+    // If no office location configured, skip geofencing
+    if (!OFFICE_LOCATION) {
+      setIsWithinGeofence(true);
+      setCheckingLocation(false);
+      return;
+    }
+
     setCheckingLocation(true);
     setLocationError(null);
 
@@ -113,10 +132,10 @@ export default function EmployeeDashboard() {
         setCheckingLocation(false);
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            setLocationError("Location permission denied. Please enable location access.");
+            setLocationError("Location permission denied.");
             break;
           case error.POSITION_UNAVAILABLE:
-            setLocationError("Location information unavailable.");
+            setLocationError("Location unavailable.");
             break;
           case error.TIMEOUT:
             setLocationError("Location request timed out.");
@@ -130,6 +149,13 @@ export default function EmployeeDashboard() {
   }, []);
 
   const handleClockIn = () => {
+    // If geofencing is disabled, clock in directly
+    if (!OFFICE_LOCATION) {
+      setClockedIn(true);
+      setClockInTime(new Date());
+      toast.success("Clocked in successfully!");
+      return;
+    }
     checkGeolocation();
     setShowClockDialog(true);
   };
@@ -178,6 +204,9 @@ export default function EmployeeDashboard() {
   };
 
   const workingTime = elapsedTime - totalBreakTime - (onBreak ? breakTime : 0);
+  const progressPercent = Math.min((workingTime / WORK_DAY_SECONDS) * 100, 100);
+  const circumference = 2 * Math.PI * 120; // radius = 120
+  const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
   const currentDate = new Date();
   const dateString = currentDate.toLocaleDateString('en-US', { 
@@ -199,69 +228,102 @@ export default function EmployeeDashboard() {
         </h1>
       </div>
 
-      {/* Circular Clock Card */}
+      {/* Circular Clock Card with Progress Ring */}
       <div className="flex justify-center py-6">
         <div className="relative">
-          {/* Outer Ring */}
-          <div className={cn(
-            "w-64 h-64 rounded-full border-4 flex items-center justify-center transition-all duration-500",
-            clockedIn 
-              ? onBreak 
-                ? "border-warning bg-warning/5" 
-                : "border-primary bg-primary/5"
-              : "border-border bg-card"
-          )}>
-            {/* Inner Content */}
-            <div className="text-center space-y-2">
-              {clockedIn ? (
-                <>
-                  {/* Status */}
-                  <div className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium",
-                    onBreak 
-                      ? "bg-warning/20 text-warning-foreground" 
-                      : "bg-primary/20 text-primary"
-                  )}>
-                    {onBreak ? <Coffee className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                    {onBreak ? "On Break" : "Working"}
-                  </div>
-                  
-                  {/* Timer */}
-                  <p className="text-4xl font-mono font-bold text-foreground">
-                    {formatTime(elapsedTime)}
-                  </p>
-                  
-                  {/* Working Time */}
-                  <p className="text-xs text-muted-foreground">
-                    Working: {formatTimeShort(workingTime)}
-                  </p>
+          {/* SVG Progress Ring */}
+          <svg className="w-64 h-64 -rotate-90" viewBox="0 0 256 256">
+            {/* Background Circle */}
+            <circle
+              cx="128"
+              cy="128"
+              r="120"
+              fill="none"
+              strokeWidth="8"
+              className="stroke-border"
+            />
+            {/* Progress Circle */}
+            {clockedIn && (
+              <circle
+                cx="128"
+                cy="128"
+                r="120"
+                fill="none"
+                strokeWidth="8"
+                strokeLinecap="round"
+                className={cn(
+                  "transition-all duration-1000",
+                  onBreak ? "stroke-warning" : "stroke-primary"
+                )}
+                style={{
+                  strokeDasharray: circumference,
+                  strokeDashoffset: strokeDashoffset,
+                }}
+              />
+            )}
+          </svg>
 
-                  {/* Clock In Time */}
-                  <p className="text-xs text-muted-foreground">
-                    Since {clockInTime?.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <Clock className="h-12 w-12 text-muted-foreground mx-auto" />
-                  <p className="text-lg font-medium text-muted-foreground">
-                    Not Clocked In
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Tap to start your day
-                  </p>
-                </>
-              )}
+          {/* Inner Content - Positioned absolutely in center */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className={cn(
+              "w-52 h-52 rounded-full flex items-center justify-center transition-all duration-300",
+              clockedIn 
+                ? onBreak 
+                  ? "bg-warning/5" 
+                  : "bg-primary/5"
+                : "bg-card"
+            )}>
+              <div className="text-center space-y-2">
+                {clockedIn ? (
+                  <>
+                    {/* Status */}
+                    <div className={cn(
+                      "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium",
+                      onBreak 
+                        ? "bg-warning/20 text-warning-foreground" 
+                        : "bg-primary/20 text-primary"
+                    )}>
+                      {onBreak ? <Coffee className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                      {onBreak ? "On Break" : "Working"}
+                    </div>
+                    
+                    {/* Timer */}
+                    <p className="text-3xl font-mono font-bold text-foreground">
+                      {formatTime(elapsedTime)}
+                    </p>
+                    
+                    {/* Progress */}
+                    <p className="text-xs text-muted-foreground">
+                      {Math.round(progressPercent)}% of {WORK_DAY_HOURS}h completed
+                    </p>
+
+                    {/* Clock In Time */}
+                    <p className="text-xs text-muted-foreground">
+                      Since {clockInTime?.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Clock className="h-10 w-10 text-muted-foreground mx-auto" />
+                    <p className="text-base font-medium text-muted-foreground">
+                      Not Clocked In
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Tap to start
+                    </p>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Break Button - Positioned on the right */}
+          {/* Break Button */}
           {clockedIn && (
             <Button
               onClick={toggleBreak}
               size="icon"
               className={cn(
-                "absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-12 h-12 rounded-full shadow-lg",
+                "absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-12 h-12 rounded-full shadow-lg transition-transform hover:scale-110",
                 onBreak 
                   ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
                   : "bg-warning hover:bg-warning/90 text-warning-foreground"
@@ -328,75 +390,132 @@ export default function EmployeeDashboard() {
         </Link>
       </div>
 
-      {/* Geofencing Dialog */}
-      <Dialog open={showClockDialog} onOpenChange={setShowClockDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary" />
-              Location Verification
-            </DialogTitle>
-            <DialogDescription>
-              Verifying your location before clock in.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            {checkingLocation ? (
-              <div className="flex flex-col items-center gap-3 py-6">
-                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm text-muted-foreground">Checking location...</p>
-              </div>
-            ) : locationError ? (
-              <div className="flex flex-col items-center gap-3 py-4">
-                <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
-                  <AlertCircle className="h-8 w-8 text-destructive" />
+      {/* Recent Activity */}
+      <Card className="hrms-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-display flex items-center gap-2">
+            <FileText className="h-4 w-4 text-primary" />
+            Recent Activity
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {recentActivity.map((activity, index) => (
+            <div
+              key={index}
+              className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+            >
+              <div className="flex items-center gap-3">
+                <div className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center",
+                  activity.type === "attendance" 
+                    ? "bg-primary/10" 
+                    : "bg-success/10"
+                )}>
+                  {activity.type === "attendance" ? (
+                    <Clock className="h-4 w-4 text-primary" />
+                  ) : (
+                    <Calendar className="h-4 w-4 text-success" />
+                  )}
                 </div>
-                <p className="text-sm text-center text-muted-foreground">{locationError}</p>
-                <Button onClick={checkGeolocation} variant="outline" size="sm">
-                  Retry
-                </Button>
-              </div>
-            ) : isWithinGeofence ? (
-              <div className="flex flex-col items-center gap-3 py-4">
-                <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center">
-                  <MapPin className="h-8 w-8 text-success" />
+                <div>
+                  <p className="text-sm font-medium">{activity.date}</p>
+                  <p className="text-xs text-muted-foreground">{activity.detail}</p>
                 </div>
-                <p className="text-sm text-center text-success font-medium">
-                  Location verified!
-                </p>
-                {currentLocation && (
-                  <p className="text-xs text-muted-foreground">
-                    {currentLocation.lat.toFixed(4)}, {currentLocation.lng.toFixed(4)}
-                  </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {activity.isLate && <StatusBadge variant="late" />}
+                {activity.type === "attendance" ? (
+                  <StatusBadge variant={activity.status as "present" | "absent"} />
+                ) : (
+                  <StatusBadge variant={activity.status as "approved" | "pending" | "rejected"} />
+                )}
+                {activity.hours && (
+                  <span className="text-xs font-medium text-primary ml-1">
+                    {activity.hours}
+                  </span>
+                )}
+                {activity.days && (
+                  <span className="text-xs font-medium text-muted-foreground ml-1">
+                    {activity.days}
+                  </span>
                 )}
               </div>
-            ) : (
-              <div className="flex flex-col items-center gap-3 py-4">
-                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-                  <MapPin className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <Button onClick={checkGeolocation} variant="outline">
-                  Check Location
-                </Button>
-              </div>
-            )}
-          </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
-          <div className="flex gap-3">
-            <Button variant="outline" className="flex-1" onClick={() => setShowClockDialog(false)}>
-              Cancel
-            </Button>
-            <Button 
-              className="flex-1 gradient-primary text-primary-foreground"
-              disabled={!isWithinGeofence || checkingLocation}
-              onClick={confirmClockIn}
-            >
-              Clock In
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Geofencing Dialog - Only shown if geofencing is enabled */}
+      {OFFICE_LOCATION && (
+        <Dialog open={showClockDialog} onOpenChange={setShowClockDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-primary" />
+                Location Verification
+              </DialogTitle>
+              <DialogDescription>
+                Verifying your location before clock in.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              {checkingLocation ? (
+                <div className="flex flex-col items-center gap-3 py-6">
+                  <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                  <p className="text-sm text-muted-foreground">Checking location...</p>
+                </div>
+              ) : locationError ? (
+                <div className="flex flex-col items-center gap-3 py-4">
+                  <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
+                    <AlertCircle className="h-8 w-8 text-destructive" />
+                  </div>
+                  <p className="text-sm text-center text-muted-foreground">{locationError}</p>
+                  <Button onClick={checkGeolocation} variant="outline" size="sm">
+                    Retry
+                  </Button>
+                </div>
+              ) : isWithinGeofence ? (
+                <div className="flex flex-col items-center gap-3 py-4">
+                  <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center">
+                    <MapPin className="h-8 w-8 text-success" />
+                  </div>
+                  <p className="text-sm text-center text-success font-medium">
+                    Location verified!
+                  </p>
+                  {currentLocation && (
+                    <p className="text-xs text-muted-foreground">
+                      {currentLocation.lat.toFixed(4)}, {currentLocation.lng.toFixed(4)}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3 py-4">
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                    <MapPin className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <Button onClick={checkGeolocation} variant="outline">
+                    Check Location
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setShowClockDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1 gradient-primary text-primary-foreground"
+                disabled={!isWithinGeofence || checkingLocation}
+                onClick={confirmClockIn}
+              >
+                Clock In
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
