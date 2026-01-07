@@ -1,7 +1,11 @@
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import {
   Users,
   UserCheck,
@@ -10,7 +14,13 @@ import {
   Calendar,
   TrendingUp,
   AlertCircle,
+  LogIn,
+  LogOut,
+  Pause,
+  Play,
+  Coffee,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const recentLeaveRequests = [
   { id: 1, name: "John Doe", type: "Casual Leave", dates: "Jan 8-9", status: "pending" as const },
@@ -25,12 +35,192 @@ const todayAttendance = [
 ];
 
 export default function AdminDashboard() {
+  const [clockedIn, setClockedIn] = useState(false);
+  const [onBreak, setOnBreak] = useState(false);
+  const [clockInTime, setClockInTime] = useState<Date | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [breakTime, setBreakTime] = useState(0);
+  const [totalBreakTime, setTotalBreakTime] = useState(0);
+
+  // Update elapsed time every second
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (clockedIn && clockInTime) {
+      interval = setInterval(() => {
+        const now = new Date();
+        const totalElapsed = Math.floor((now.getTime() - clockInTime.getTime()) / 1000);
+        setElapsedTime(totalElapsed);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [clockedIn, clockInTime]);
+
+  // Track break time
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (onBreak) {
+      interval = setInterval(() => {
+        setBreakTime(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [onBreak]);
+
+  const handleClockIn = () => {
+    setClockedIn(true);
+    setClockInTime(new Date());
+    toast.success("Clocked in successfully!");
+  };
+
+  const handleClockOut = () => {
+    setClockedIn(false);
+    setOnBreak(false);
+    setClockInTime(null);
+    setElapsedTime(0);
+    setBreakTime(0);
+    setTotalBreakTime(0);
+    toast.success("Clocked out successfully!");
+  };
+
+  const toggleBreak = () => {
+    if (onBreak) {
+      setTotalBreakTime(prev => prev + breakTime);
+      setBreakTime(0);
+      toast.info("Break ended");
+    } else {
+      toast.info("Break started");
+    }
+    setOnBreak(!onBreak);
+  };
+
+  const formatTime = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatTimeShort = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    if (hrs > 0) return `${hrs}h ${mins}m`;
+    return `${mins}m`;
+  };
+
+  const allBreakTime = totalBreakTime + (onBreak ? breakTime : 0);
+
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader
         title="Dashboard"
         subtitle="Welcome back! Here's what's happening today."
       />
+
+      {/* Minimalist Clock-In Card */}
+      <Card className={cn(
+        "hrms-card overflow-hidden transition-all",
+        clockedIn && !onBreak && "border-primary/50",
+        onBreak && "border-warning/50"
+      )}>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {/* Status Indicator */}
+              <div className={cn(
+                "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
+                clockedIn 
+                  ? onBreak 
+                    ? "bg-warning/10" 
+                    : "bg-primary/10"
+                  : "bg-muted"
+              )}>
+                {clockedIn ? (
+                  onBreak ? (
+                    <Coffee className="h-6 w-6 text-warning" />
+                  ) : (
+                    <Clock className={cn("h-6 w-6 text-primary", !onBreak && "animate-pulse")} />
+                  )
+                ) : (
+                  <Clock className="h-6 w-6 text-muted-foreground" />
+                )}
+              </div>
+
+              {/* Time Info */}
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className={cn(
+                    "text-xs font-medium px-2 py-0.5 rounded-full",
+                    clockedIn 
+                      ? onBreak 
+                        ? "bg-warning/20 text-warning-foreground" 
+                        : "bg-primary/20 text-primary"
+                      : "bg-muted text-muted-foreground"
+                  )}>
+                    {clockedIn ? (onBreak ? "On Break" : "Working") : "Not Clocked In"}
+                  </span>
+                </div>
+                {clockedIn ? (
+                  <div className="mt-1">
+                    <span className="text-2xl font-mono font-bold">{formatTime(elapsedTime)}</span>
+                    <span className="text-sm text-muted-foreground ml-2">
+                      since {clockInTime?.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Click to start your day
+                  </p>
+                )}
+                {allBreakTime > 0 && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Break: {formatTimeShort(allBreakTime)}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2">
+              {clockedIn ? (
+                <>
+                  <Button
+                    onClick={toggleBreak}
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "gap-1.5",
+                      onBreak 
+                        ? "border-primary text-primary hover:bg-primary hover:text-primary-foreground" 
+                        : "border-warning text-warning hover:bg-warning hover:text-warning-foreground"
+                    )}
+                  >
+                    {onBreak ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                    {onBreak ? "Resume" : "Break"}
+                  </Button>
+                  <Button
+                    onClick={handleClockOut}
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Clock Out
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={handleClockIn}
+                  size="sm"
+                  className="gap-1.5 gradient-primary text-primary-foreground"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Clock In
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -86,9 +276,11 @@ export default function AdminDashboard() {
                 <StatusBadge variant={request.status} />
               </div>
             ))}
-            <button className="w-full text-sm text-primary font-medium py-2 hover:bg-primary/5 rounded-lg transition-colors">
-              View All Requests →
-            </button>
+            <Link to="/admin/leave-approval">
+              <button className="w-full text-sm text-primary font-medium py-2 hover:bg-primary/5 rounded-lg transition-colors">
+                View All Requests →
+              </button>
+            </Link>
           </CardContent>
         </Card>
 
@@ -122,9 +314,11 @@ export default function AdminDashboard() {
                 <StatusBadge variant={record.status} />
               </div>
             ))}
-            <button className="w-full text-sm text-primary font-medium py-2 hover:bg-primary/5 rounded-lg transition-colors">
-              View Full Report →
-            </button>
+            <Link to="/admin/reports/attendance">
+              <button className="w-full text-sm text-primary font-medium py-2 hover:bg-primary/5 rounded-lg transition-colors">
+                View Full Report →
+              </button>
+            </Link>
           </CardContent>
         </Card>
       </div>
@@ -139,20 +333,30 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { label: "Add Employee", icon: Users },
-              { label: "Approve Leaves", icon: Calendar },
-              { label: "Run Payroll", icon: TrendingUp },
-              { label: "View Reports", icon: Clock },
-            ].map((action) => (
-              <button
-                key={action.label}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all"
-              >
-                <action.icon className="h-6 w-6 text-primary" />
-                <span className="text-sm font-medium">{action.label}</span>
+            <Link to="/admin/add-employee">
+              <button className="w-full flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all">
+                <Users className="h-6 w-6 text-primary" />
+                <span className="text-sm font-medium">Add Employee</span>
               </button>
-            ))}
+            </Link>
+            <Link to="/admin/leave-approval">
+              <button className="w-full flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all">
+                <Calendar className="h-6 w-6 text-primary" />
+                <span className="text-sm font-medium">Approve Leaves</span>
+              </button>
+            </Link>
+            <Link to="/admin/masters/payroll">
+              <button className="w-full flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all">
+                <TrendingUp className="h-6 w-6 text-primary" />
+                <span className="text-sm font-medium">Run Payroll</span>
+              </button>
+            </Link>
+            <Link to="/admin/reports/attendance">
+              <button className="w-full flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all">
+                <Clock className="h-6 w-6 text-primary" />
+                <span className="text-sm font-medium">View Reports</span>
+              </button>
+            </Link>
           </div>
         </CardContent>
       </Card>

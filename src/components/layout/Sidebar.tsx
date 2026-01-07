@@ -7,15 +7,10 @@ import {
   UserPlus,
   ClipboardCheck,
   Calendar,
-  FileText,
   Settings,
   Building2,
-  Briefcase,
-  CalendarDays,
   Clock,
-  Tag,
   CreditCard,
-  Monitor,
   BarChart3,
   LogOut,
   ChevronDown,
@@ -180,17 +175,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40"
           onClick={onClose}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Always slides in from left */}
       <aside
         className={cn(
           "fixed top-0 left-0 z-50 h-full w-72 bg-sidebar border-r border-sidebar-border",
           "transform transition-transform duration-300 ease-in-out",
-          "lg:translate-x-0 lg:static",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -213,7 +207,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
               onClick={onClose}
             >
               <X className="h-5 w-5" />
