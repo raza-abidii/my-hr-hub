@@ -20,6 +20,8 @@ import {
   LogOut,
   ChevronDown,
   X,
+  Bell,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -113,6 +115,30 @@ const navigation: NavItem[] = [
     title: "Employee Directory",
     href: "/employee/directory",
     icon: Users,
+    roles: ["employee"],
+  },
+  {
+    title: "Notifications",
+    href: "/admin/notifications",
+    icon: Bell,
+    roles: ["admin"],
+  },
+  {
+    title: "Notifications",
+    href: "/employee/notifications",
+    icon: Bell,
+    roles: ["employee"],
+  },
+  {
+    title: "My Profile",
+    href: "/admin/profile",
+    icon: User,
+    roles: ["admin"],
+  },
+  {
+    title: "My Profile",
+    href: "/employee/profile",
+    icon: User,
     roles: ["employee"],
   },
 ];

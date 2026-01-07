@@ -20,8 +20,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Calendar, Plus, Clock } from "lucide-react";
+import { Calendar, Plus, FileText, Upload, CalendarDays } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface LeaveRequest {
   id: string;
@@ -81,32 +85,63 @@ const mockLeaveRequests: LeaveRequest[] = [
 ];
 
 const leaveBalance = [
-  { type: "Casual Leave", code: "CL", used: 2, total: 12 },
-  { type: "Sick Leave", code: "SL", used: 1, total: 10 },
-  { type: "Earned Leave", code: "EL", used: 5, total: 18 },
-  { type: "Compensatory Off", code: "CO", used: 0, total: 2 },
+  { type: "Casual Leave", code: "CL", used: 4, total: 12, color: "bg-blue-500" },
+  { type: "Sick Leave", code: "SL", used: 2, total: 10, color: "bg-purple-500" },
+  { type: "Earned Leave", code: "EL", used: 6, total: 18, color: "bg-primary" },
+  { type: "Compensatory Off", code: "CO", used: 0, total: 2, color: "bg-info" },
 ];
 
-const leaveTypes = ["Casual Leave", "Sick Leave", "Earned Leave", "Compensatory Off"];
+const leaveTypes = [
+  { value: "casual", label: "Casual Leave", remaining: 8 },
+  { value: "sick", label: "Sick Leave", remaining: 8 },
+  { value: "earned", label: "Earned Leave", remaining: 12 },
+  { value: "comp", label: "Compensatory Off", remaining: 2 },
+];
 
 export default function LeaveManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [fromDate, setFromDate] = useState<Date>();
+  const [toDate, setToDate] = useState<Date>();
   const [formData, setFormData] = useState({
     leaveType: "",
-    fromDate: "",
-    toDate: "",
     reason: "",
   });
   const { toast } = useToast();
 
+  const calculateDays = () => {
+    if (!fromDate || !toDate) return 0;
+    const diffTime = Math.abs(toDate.getTime() - fromDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.leaveType || !formData.fromDate || !formData.toDate || !formData.reason.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill all required fields",
-        variant: "destructive",
+    if (!formData.leaveType) {
+      toast({ title: "Error", description: "Please select leave type", variant: "destructive" });
+      return;
+    }
+    if (!fromDate || !toDate) {
+      toast({ title: "Error", description: "Please select dates", variant: "destructive" });
+      return;
+    }
+    if (fromDate > toDate) {
+      toast({ title: "Error", description: "From date cannot be after To date", variant: "destructive" });
+      return;
+    }
+    if (!formData.reason.trim()) {
+      toast({ title: "Error", description: "Please provide a reason for leave", variant: "destructive" });
+      return;
+    }
+
+    const selectedLeave = leaveTypes.find(l => l.value === formData.leaveType);
+    const days = calculateDays();
+    if (selectedLeave && days > selectedLeave.remaining) {
+      toast({ 
+        title: "Insufficient Balance", 
+        description: `Available: ${selectedLeave.remaining} days. Requested: ${days} days`, 
+        variant: "destructive" 
       });
       return;
     }
@@ -117,7 +152,9 @@ export default function LeaveManagement() {
     });
 
     setIsDialogOpen(false);
-    setFormData({ leaveType: "", fromDate: "", toDate: "", reason: "" });
+    setFormData({ leaveType: "", reason: "" });
+    setFromDate(undefined);
+    setToDate(undefined);
   };
 
   return (
@@ -133,9 +170,12 @@ export default function LeaveManagement() {
                 Apply Leave
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-lg">
               <DialogHeader>
-                <DialogTitle className="font-display">Apply for Leave</DialogTitle>
+                <DialogTitle className="font-display flex items-center gap-2">
+                  <CalendarDays className="h-5 w-5 text-primary" />
+                  Apply for Leave
+                </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div className="space-y-2">
@@ -149,10 +189,15 @@ export default function LeaveManagement() {
                     <SelectTrigger>
                       <SelectValue placeholder="Select leave type" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-popover">
                       {leaveTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
+                        <SelectItem key={type.value} value={type.value}>
+                          <span className="flex items-center justify-between gap-4">
+                            {type.label}
+                            <span className="text-xs text-muted-foreground">
+                              ({type.remaining} remaining)
+                            </span>
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -162,25 +207,65 @@ export default function LeaveManagement() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>From Date *</Label>
-                    <Input
-                      type="date"
-                      value={formData.fromDate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, fromDate: e.target.value })
-                      }
-                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !fromDate && "text-muted-foreground"
+                          )}
+                        >
+                          <Calendar className="mr-2 h-4 w-4" />
+                          {fromDate ? format(fromDate, "PPP") : "Select date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-popover" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={fromDate}
+                          onSelect={setFromDate}
+                          initialFocus
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="space-y-2">
                     <Label>To Date *</Label>
-                    <Input
-                      type="date"
-                      value={formData.toDate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, toDate: e.target.value })
-                      }
-                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !toDate && "text-muted-foreground"
+                          )}
+                        >
+                          <Calendar className="mr-2 h-4 w-4" />
+                          {toDate ? format(toDate, "PPP") : "Select date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-popover" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={toDate}
+                          onSelect={setToDate}
+                          initialFocus
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
+
+                {fromDate && toDate && fromDate <= toDate && (
+                  <div className="p-3 rounded-lg bg-accent/50 border border-accent">
+                    <p className="text-sm font-medium text-accent-foreground">
+                      Duration: {calculateDays()} day{calculateDays() > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label>Reason *</Label>
@@ -192,6 +277,19 @@ export default function LeaveManagement() {
                     }
                     rows={3}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Attachment (Optional)</Label>
+                  <div className="border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-primary/50 transition-colors cursor-pointer">
+                    <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      Click to upload or drag and drop
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      PDF, JPG, PNG (max 5MB)
+                    </p>
+                  </div>
                 </div>
 
                 <div className="flex gap-3 pt-2">
@@ -214,44 +312,57 @@ export default function LeaveManagement() {
       />
 
       {/* Leave Balance Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {leaveBalance.map((leave) => (
-          <Card key={leave.code} className="hrms-card">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1">
-                    {leave.type}
-                  </p>
-                  <p className="text-2xl font-display font-bold text-foreground">
-                    {leave.total - leave.used}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    of {leave.total} remaining
-                  </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {leaveBalance.map((leave) => {
+          const remaining = leave.total - leave.used;
+          const percentage = (remaining / leave.total) * 100;
+          
+          return (
+            <Card key={leave.code} className="hrms-card overflow-hidden">
+              <div className={cn("h-1.5", leave.color)} />
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {leave.type}
+                    </p>
+                    <p className="text-3xl font-display font-bold text-foreground mt-1">
+                      {remaining}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      of {leave.total} days remaining
+                    </p>
+                  </div>
+                  <span className={cn(
+                    "px-2 py-1 text-xs font-bold rounded text-white",
+                    leave.color
+                  )}>
+                    {leave.code}
+                  </span>
                 </div>
-                <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-semibold rounded">
-                  {leave.code}
-                </span>
-              </div>
-              <div className="mt-3 h-1.5 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full"
-                  style={{
-                    width: `${((leave.total - leave.used) / leave.total) * 100}%`,
-                  }}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Used: {leave.used}</span>
+                    <span>{Math.round(percentage)}%</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={cn("h-full rounded-full transition-all", leave.color)}
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Leave History */}
       <Card className="hrms-card">
         <CardHeader>
           <CardTitle className="text-lg font-display flex items-center gap-2">
-            <Clock className="h-5 w-5 text-primary" />
+            <FileText className="h-5 w-5 text-primary" />
             Leave History
           </CardTitle>
         </CardHeader>
@@ -264,21 +375,25 @@ export default function LeaveManagement() {
               >
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium">{request.type}</span>
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="font-semibold">{request.type}</span>
                       <StatusBadge variant={request.status} />
+                      <span className="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs font-medium rounded">
+                        {request.days} day{request.days > 1 ? 's' : ''}
+                      </span>
                     </div>
                     <p className="text-sm text-muted-foreground mb-1">
-                      {request.fromDate} - {request.toDate} ({request.days} day
-                      {request.days > 1 ? "s" : ""})
+                      📅 {request.fromDate} - {request.toDate}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Reason: {request.reason}
                     </p>
                     {request.approverComment && (
-                      <p className="text-sm text-primary mt-2 italic">
-                        "{request.approverComment}"
-                      </p>
+                      <div className="mt-2 p-2 rounded bg-muted/50">
+                        <p className="text-sm text-primary italic">
+                          💬 "{request.approverComment}"
+                        </p>
+                      </div>
                     )}
                   </div>
                   <div className="text-right">

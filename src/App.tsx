@@ -21,6 +21,12 @@ import DepartmentMaster from "./pages/admin/masters/DepartmentMaster";
 import EmployeeDashboard from "./pages/employee/Dashboard";
 import MyAttendance from "./pages/employee/MyAttendance";
 import LeaveManagement from "./pages/employee/LeaveManagement";
+import Payroll from "./pages/employee/Payroll";
+import EmployeeDirectory from "./pages/employee/EmployeeDirectory";
+
+// Shared Pages
+import Notifications from "./pages/shared/Notifications";
+import Profile from "./pages/shared/Profile";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +47,8 @@ const App = () => (
               <Route path="add-employee" element={<AddEmployee />} />
               <Route path="masters/employee" element={<EmployeeMaster />} />
               <Route path="masters/department" element={<DepartmentMaster />} />
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="profile" element={<Profile />} />
             </Route>
 
             {/* Employee Routes */}
@@ -48,6 +56,10 @@ const App = () => (
               <Route index element={<EmployeeDashboard />} />
               <Route path="attendance" element={<MyAttendance />} />
               <Route path="leave" element={<LeaveManagement />} />
+              <Route path="payroll" element={<Payroll />} />
+              <Route path="directory" element={<EmployeeDirectory />} />
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="profile" element={<Profile />} />
             </Route>
 
             {/* Catch all */}
