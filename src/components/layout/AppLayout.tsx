@@ -3,8 +3,9 @@ import { Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
 import { Sidebar } from "./Sidebar";
 import { Button } from "@/components/ui/button";
-import { Menu, Bell, Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { NotificationDropdown } from "@/components/NotificationDropdown";
 
 export function AppLayout() {
   const { isAuthenticated, user } = useAuth();
@@ -18,14 +19,13 @@ export function AppLayout() {
     <div className="min-h-screen bg-background flex">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col lg:ml-0">
+      <div className="flex-1 flex flex-col">
         {/* Top Header */}
         <header className="sticky top-0 z-30 h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu className="h-5 w-5" />
@@ -41,10 +41,7 @@ export function AppLayout() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full" />
-            </Button>
+            <NotificationDropdown />
 
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center">

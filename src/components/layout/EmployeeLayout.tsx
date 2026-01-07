@@ -1,8 +1,9 @@
 import { Outlet, Navigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Bell, Home, Clock, Calendar, CreditCard, Users } from "lucide-react";
+import { Home, Clock, Calendar, CreditCard, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NotificationDropdown } from "@/components/NotificationDropdown";
 
 const bottomNavItems = [
   { title: "Home", href: "/employee", icon: Home },
@@ -37,12 +38,7 @@ export function EmployeeLayout() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Link to="/employee/notifications">
-            <Button variant="ghost" size="icon" className="relative h-9 w-9">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-            </Button>
-          </Link>
+          <NotificationDropdown />
           <Link to="/employee/profile">
             <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center">
               <span className="text-xs font-semibold text-primary-foreground">
