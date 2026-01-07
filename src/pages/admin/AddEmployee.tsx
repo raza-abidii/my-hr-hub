@@ -16,12 +16,78 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Save, Upload, User, Briefcase, CreditCard, Phone, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const departments = ["Information Technology", "Human Resources", "Finance", "Sales", "Marketing"];
-const designations = ["Manager", "Senior", "Junior", "Intern"];
-const categories = ["Permanent", "Contract", "Consultant"];
-const shifts = ["General (9-6)", "Morning (6-3)", "Evening (3-12)", "Night (10-7)"];
+// Master data - should come from master tables
+const departments = [
+  { id: 1, name: "Information Technology", code: "IT" },
+  { id: 2, name: "Human Resources", code: "HR" },
+  { id: 3, name: "Finance & Accounts", code: "FIN" },
+  { id: 4, name: "Sales & Marketing", code: "SALES" },
+  { id: 5, name: "Operations", code: "OPS" },
+  { id: 6, name: "Research & Development", code: "R&D" },
+];
+
+const designations = [
+  { id: 1, name: "Chief Executive Officer", grade: "L1" },
+  { id: 2, name: "Chief Technology Officer", grade: "L1" },
+  { id: 3, name: "Senior Manager", grade: "L2" },
+  { id: 4, name: "Manager", grade: "L3" },
+  { id: 5, name: "Team Lead", grade: "L4" },
+  { id: 6, name: "Senior Developer", grade: "L5" },
+  { id: 7, name: "Developer", grade: "L6" },
+  { id: 8, name: "Junior Developer", grade: "L7" },
+  { id: 9, name: "Intern", grade: "L8" },
+];
+
+const categories = [
+  { id: 1, name: "Permanent", code: "PERM" },
+  { id: 2, name: "Contract", code: "CONT" },
+  { id: 3, name: "Consultant", code: "CONS" },
+  { id: 4, name: "Probation", code: "PROB" },
+  { id: 5, name: "Trainee", code: "TRAIN" },
+];
+
+const shifts = [
+  { id: 1, name: "General Shift", timing: "09:00 AM - 06:00 PM" },
+  { id: 2, name: "Morning Shift", timing: "06:00 AM - 03:00 PM" },
+  { id: 3, name: "Evening Shift", timing: "03:00 PM - 12:00 AM" },
+  { id: 4, name: "Night Shift", timing: "10:00 PM - 07:00 AM" },
+  { id: 5, name: "Flexible", timing: "Flexible Hours" },
+];
+
+const leaveTypes = [
+  { id: 1, name: "Casual Leave", code: "CL", days: 12 },
+  { id: 2, name: "Sick Leave", code: "SL", days: 10 },
+  { id: 3, name: "Earned Leave", code: "EL", days: 15 },
+  { id: 4, name: "Maternity Leave", code: "ML", days: 180 },
+  { id: 5, name: "Paternity Leave", code: "PL", days: 15 },
+];
+
+const companies = [
+  { id: 1, name: "SFON Technologies Pvt Ltd", code: "SFON" },
+  { id: 2, name: "SFON Solutions Inc", code: "SFON-US" },
+  { id: 3, name: "SFON Global Services", code: "SFON-GL" },
+];
+
+const machines = [
+  { id: 1, name: "Main Entrance Biometric", location: "Building A" },
+  { id: 2, name: "IT Floor Biometric", location: "3rd Floor" },
+  { id: 3, name: "HR Floor Biometric", location: "2nd Floor" },
+];
+
+const holidays = [
+  { id: 1, name: "New Year's Day", date: "2024-01-01" },
+  { id: 2, name: "Republic Day", date: "2024-01-26" },
+  { id: 3, name: "Holi", date: "2024-03-25" },
+  { id: 4, name: "Independence Day", date: "2024-08-15" },
+  { id: 5, name: "Diwali", date: "2024-11-01" },
+  { id: 6, name: "Christmas", date: "2024-12-25" },
+];
+
 const genders = ["Male", "Female", "Other"];
-const relations = ["Spouse", "Parent", "Sibling", "Friend"];
+const relations = ["Spouse", "Parent", "Sibling", "Child", "Friend", "Other"];
+const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+const maritalStatus = ["Single", "Married", "Divorced", "Widowed"];
+const employmentTypes = ["Full-time", "Part-time", "Contract", "Remote"];
 
 export default function AddEmployee() {
   const navigate = useNavigate();
@@ -34,11 +100,13 @@ export default function AddEmployee() {
     phone: "",
     dateOfBirth: "",
     gender: "",
+    bloodGroup: "",
+    maritalStatus: "",
     address: "",
     city: "",
     state: "",
     zipCode: "",
-    country: "USA",
+    country: "India",
     // Employment
     employeeId: "",
     joiningDate: "",
@@ -46,6 +114,8 @@ export default function AddEmployee() {
     designation: "",
     category: "",
     shift: "",
+    company: "",
+    machine: "",
     reportingTo: "",
     employmentType: "",
     workLocation: "",
@@ -199,6 +269,38 @@ export default function AddEmployee() {
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-2">
+            <Label>Blood Group</Label>
+            <Select
+              value={formData.bloodGroup}
+              onValueChange={(v) => updateField("bloodGroup", v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select blood group" />
+              </SelectTrigger>
+              <SelectContent>
+                {bloodGroups.map((bg) => (
+                  <SelectItem key={bg} value={bg}>{bg}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Marital Status</Label>
+            <Select
+              value={formData.maritalStatus}
+              onValueChange={(v) => updateField("maritalStatus", v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {maritalStatus.map((ms) => (
+                  <SelectItem key={ms} value={ms}>{ms}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-2 md:col-span-2">
             <Label>Address</Label>
             <Input
@@ -278,7 +380,9 @@ export default function AddEmployee() {
               </SelectTrigger>
               <SelectContent>
                 {departments.map((d) => (
-                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                  <SelectItem key={d.id.toString()} value={d.name}>
+                    {d.name} ({d.code})
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -294,7 +398,9 @@ export default function AddEmployee() {
               </SelectTrigger>
               <SelectContent>
                 {designations.map((d) => (
-                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                  <SelectItem key={d.id.toString()} value={d.name}>
+                    {d.name} - {d.grade}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -310,7 +416,9 @@ export default function AddEmployee() {
               </SelectTrigger>
               <SelectContent>
                 {categories.map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                  <SelectItem key={c.id.toString()} value={c.name}>
+                    {c.name} ({c.code})
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -326,7 +434,61 @@ export default function AddEmployee() {
               </SelectTrigger>
               <SelectContent>
                 {shifts.map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                  <SelectItem key={s.id.toString()} value={s.name}>
+                    {s.name} ({s.timing})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Company</Label>
+            <Select
+              value={formData.company}
+              onValueChange={(v) => updateField("company", v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select company" />
+              </SelectTrigger>
+              <SelectContent>
+                {companies.map((c) => (
+                  <SelectItem key={c.id.toString()} value={c.name}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Attendance Machine</Label>
+            <Select
+              value={formData.machine}
+              onValueChange={(v) => updateField("machine", v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select machine" />
+              </SelectTrigger>
+              <SelectContent>
+                {machines.map((m) => (
+                  <SelectItem key={m.id.toString()} value={m.name}>
+                    {m.name} - {m.location}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Employment Type</Label>
+            <Select
+              value={formData.employmentType}
+              onValueChange={(v) => updateField("employmentType", v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                {employmentTypes.map((et) => (
+                  <SelectItem key={et} value={et}>{et}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

@@ -19,8 +19,16 @@ import {
   Pause,
   Play,
   Coffee,
+  PieChart,
+  BarChart3,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
 
 const recentLeaveRequests = [
   { id: 1, name: "John Doe", type: "Casual Leave", dates: "Jan 8-9", status: "pending" as const },
@@ -33,6 +41,38 @@ const todayAttendance = [
   { id: 2, name: "Tom Brown", department: "HR", time: "09:15 AM", status: "late" as const },
   { id: 3, name: "Emily Davis", department: "Finance", time: "-", status: "absent" as const },
 ];
+
+// Today's attendance distribution data
+const todayDistribution = [
+  { name: "Present", value: 142, color: "hsl(var(--success))" },
+  { name: "Absent", value: 8, color: "hsl(var(--destructive))" },
+  { name: "Late", value: 4, color: "hsl(var(--warning))" },
+  { name: "On Leave", value: 2, color: "hsl(var(--primary))" },
+];
+
+// Weekly attendance data
+const weeklyAttendance = [
+  { day: "Mon", present: 148, absent: 5, late: 3 },
+  { day: "Tue", present: 145, absent: 8, late: 3 },
+  { day: "Wed", present: 142, absent: 10, late: 4 },
+  { day: "Thu", present: 150, absent: 4, late: 2 },
+  { day: "Fri", present: 140, absent: 12, late: 4 },
+  { day: "Sat", present: 45, absent: 2, late: 1 },
+  { day: "Sun", present: 0, absent: 0, late: 0 },
+];
+
+const pieChartConfig = {
+  present: { label: "Present", color: "hsl(var(--success))" },
+  absent: { label: "Absent", color: "hsl(var(--destructive))" },
+  late: { label: "Late", color: "hsl(var(--warning))" },
+  onLeave: { label: "On Leave", color: "hsl(var(--primary))" },
+};
+
+const barChartConfig = {
+  present: { label: "Present", color: "hsl(var(--success))" },
+  absent: { label: "Absent", color: "hsl(var(--destructive))" },
+  late: { label: "Late", color: "hsl(var(--warning))" },
+};
 
 export default function AdminDashboard() {
   const [clockedIn, setClockedIn] = useState(false);
@@ -249,6 +289,103 @@ export default function AdminDashboard() {
           icon={Clock}
           variant="warning"
         />
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Today's Attendance Distribution - Pie Chart */}
+        <Card className="hrms-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-display flex items-center gap-2">
+              <PieChart className="h-5 w-5 text-primary" />
+              Today's Attendance Distribution
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={pieChartConfig} className="h-[250px] w-full">
+              <RechartsPie>
+                <Pie
+                  data={todayDistribution}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={90}
+                  paddingAngle={4}
+                  dataKey="value"
+                  nameKey="name"
+                  label={({ name, value }) => `${name}: ${value}`}
+                  labelLine={false}
+                >
+                  {todayDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <ChartTooltip content={<ChartTooltipContent />} />
+              </RechartsPie>
+            </ChartContainer>
+            <div className="flex flex-wrap justify-center gap-4 mt-4">
+              {todayDistribution.map((item) => (
+                <div key={item.name} className="flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {item.name}: {item.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Weekly Attendance Distribution - Bar Chart */}
+        <Card className="hrms-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-display flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Weekly Attendance Distribution
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={barChartConfig} className="h-[280px] w-full">
+              <BarChart data={weeklyAttendance}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis
+                  dataKey="day"
+                  tick={{ fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Legend />
+                <Bar
+                  dataKey="present"
+                  name="Present"
+                  fill="hsl(var(--success))"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="absent"
+                  name="Absent"
+                  fill="hsl(var(--destructive))"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="late"
+                  name="Late"
+                  fill="hsl(var(--warning))"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Two Column Layout */}

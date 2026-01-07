@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AddEmployee from "./pages/admin/AddEmployee";
 import LeaveApproval from "./pages/admin/LeaveApproval";
+import UserManagement from "./pages/admin/UserManagement";
 import EmployeeMaster from "./pages/admin/masters/EmployeeMaster";
 import DepartmentMaster from "./pages/admin/masters/DepartmentMaster";
 import DesignationMaster from "./pages/admin/masters/DesignationMaster";
@@ -62,6 +63,7 @@ const App = () => (
               <Route index element={<AdminDashboard />} />
               <Route path="add-employee" element={<AddEmployee />} />
               <Route path="leave-approval" element={<LeaveApproval />} />
+              <Route path="users" element={<UserManagement />} />
               <Route path="masters/employee" element={<EmployeeMaster />} />
               <Route path="masters/department" element={<DepartmentMaster />} />
               <Route path="masters/designation" element={<DesignationMaster />} />
