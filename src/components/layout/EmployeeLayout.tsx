@@ -1,9 +1,16 @@
-import { Outlet, Navigate, Link, useLocation } from "react-router-dom";
+import { Outlet, Navigate, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Home, Clock, Calendar, CreditCard, Users } from "lucide-react";
+import { Home, Clock, Calendar, CreditCard, Users, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const bottomNavItems = [
   { title: "Home", href: "/employee", icon: Home },
@@ -14,8 +21,9 @@ const bottomNavItems = [
 ];
 
 export function EmployeeLayout() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -24,6 +32,11 @@ export function EmployeeLayout() {
   const isActive = (href: string) => {
     if (href === "/employee") return location.pathname === "/employee";
     return location.pathname.startsWith(href);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
   };
 
   return (
@@ -39,13 +52,27 @@ export function EmployeeLayout() {
 
         <div className="flex items-center gap-2">
           <NotificationDropdown />
-          <Link to="/employee/profile">
-            <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center">
-              <span className="text-xs font-semibold text-primary-foreground">
-                {user?.name.charAt(0)}
-              </span>
-            </div>
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                <span className="text-xs font-semibold text-primary-foreground">
+                  {user?.name.charAt(0)}
+                </span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 bg-popover">
+              <DropdownMenuItem asChild>
+                <Link to="/employee/profile" className="cursor-pointer">
+                  Profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
+                <LogOut className="h-4 w-4 mr-2" />
+                Log Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
