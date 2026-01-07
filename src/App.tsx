@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/lib/auth-context";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { EmployeeLayout } from "@/components/layout/EmployeeLayout";
 
 // Pages
 import Index from "./pages/Index";
@@ -14,8 +15,23 @@ import NotFound from "./pages/NotFound";
 // Admin Pages
 import AdminDashboard from "./pages/admin/Dashboard";
 import AddEmployee from "./pages/admin/AddEmployee";
+import LeaveApproval from "./pages/admin/LeaveApproval";
 import EmployeeMaster from "./pages/admin/masters/EmployeeMaster";
 import DepartmentMaster from "./pages/admin/masters/DepartmentMaster";
+import DesignationMaster from "./pages/admin/masters/DesignationMaster";
+import HolidayMaster from "./pages/admin/masters/HolidayMaster";
+import ShiftMaster from "./pages/admin/masters/ShiftMaster";
+import LeaveTypeMaster from "./pages/admin/masters/LeaveTypeMaster";
+import CategoryMaster from "./pages/admin/masters/CategoryMaster";
+import CompanyMaster from "./pages/admin/masters/CompanyMaster";
+import MachineMaster from "./pages/admin/masters/MachineMaster";
+import PayrollMaster from "./pages/admin/masters/PayrollMaster";
+
+// Admin Reports
+import AttendanceReport from "./pages/admin/reports/AttendanceReport";
+import LeaveReport from "./pages/admin/reports/LeaveReport";
+import PayrollReport from "./pages/admin/reports/PayrollReport";
+import EmployeeReport from "./pages/admin/reports/EmployeeReport";
 
 // Employee Pages
 import EmployeeDashboard from "./pages/employee/Dashboard";
@@ -45,14 +61,27 @@ const App = () => (
             <Route path="/admin" element={<AppLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="add-employee" element={<AddEmployee />} />
+              <Route path="leave-approval" element={<LeaveApproval />} />
               <Route path="masters/employee" element={<EmployeeMaster />} />
               <Route path="masters/department" element={<DepartmentMaster />} />
+              <Route path="masters/designation" element={<DesignationMaster />} />
+              <Route path="masters/holiday" element={<HolidayMaster />} />
+              <Route path="masters/shift" element={<ShiftMaster />} />
+              <Route path="masters/leave-type" element={<LeaveTypeMaster />} />
+              <Route path="masters/category" element={<CategoryMaster />} />
+              <Route path="masters/company" element={<CompanyMaster />} />
+              <Route path="masters/machine" element={<MachineMaster />} />
+              <Route path="masters/payroll" element={<PayrollMaster />} />
+              <Route path="reports/attendance" element={<AttendanceReport />} />
+              <Route path="reports/leave" element={<LeaveReport />} />
+              <Route path="reports/payroll" element={<PayrollReport />} />
+              <Route path="reports/employee" element={<EmployeeReport />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="profile" element={<Profile />} />
             </Route>
 
-            {/* Employee Routes */}
-            <Route path="/employee" element={<AppLayout />}>
+            {/* Employee Routes - with bottom navigation */}
+            <Route path="/employee" element={<EmployeeLayout />}>
               <Route index element={<EmployeeDashboard />} />
               <Route path="attendance" element={<MyAttendance />} />
               <Route path="leave" element={<LeaveManagement />} />
