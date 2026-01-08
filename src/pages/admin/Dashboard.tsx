@@ -28,7 +28,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
+import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, LineChart, Line, Tooltip } from "recharts";
 
 const recentLeaveRequests = [
   { id: 1, name: "John Doe", type: "Casual Leave", dates: "Jan 8-9", status: "pending" as const },
@@ -73,6 +73,22 @@ const barChartConfig = {
   absent: { label: "Absent", color: "hsl(var(--destructive))" },
   late: { label: "Late", color: "hsl(var(--warning))" },
 };
+
+// Monthly attendance trend data
+const monthlyAttendance = [
+  { month: "Jan", attendance: 94 },
+  { month: "Feb", attendance: 92 },
+  { month: "Mar", attendance: 96 },
+  { month: "Apr", attendance: 93 },
+  { month: "May", attendance: 95 },
+  { month: "Jun", attendance: 91 },
+  { month: "Jul", attendance: 97 },
+  { month: "Aug", attendance: 94 },
+  { month: "Sep", attendance: 96 },
+  { month: "Oct", attendance: 95 },
+  { month: "Nov", attendance: 93 },
+  { month: "Dec", attendance: 94 },
+];
 
 export default function AdminDashboard() {
   const [clockedIn, setClockedIn] = useState(false);
@@ -387,6 +403,44 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Monthly Attendance Trend */}
+      <Card className="hrms-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-display flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            Monthly Attendance Trend
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyAttendance}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="month" className="text-xs" />
+                <YAxis domain={[80, 100]} className="text-xs" tickFormatter={(value) => `${value}%`} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                  }}
+                  formatter={(value: number) => [`${value}%`, "Attendance"]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="attendance"
+                  name="Attendance %"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={3}
+                  dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: "hsl(var(--primary))" }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
