@@ -14,9 +14,21 @@ import {
   Coffee,
   FileText,
   TrendingUp,
+  BarChart3,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { StatusBadge } from "@/components/ui/status-badge";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  LineChart,
+  Line,
+} from "recharts";
 
 const WORK_DAY_HOURS = 8;
 const WORK_DAY_SECONDS = WORK_DAY_HOURS * 3600;
@@ -25,6 +37,33 @@ const recentActivity = [
   { type: "attendance", date: "Jan 6, 2026", status: "present", detail: "09:00 AM - 06:05 PM", hours: "9h 5m" },
   { type: "leave", date: "Jan 3, 2026", status: "approved", detail: "Casual Leave", days: "1 day" },
   { type: "attendance", date: "Jan 2, 2026", status: "present", detail: "09:15 AM - 06:00 PM", hours: "8h 45m", isLate: true },
+];
+
+// Weekly attendance data
+const weeklyAttendanceData = [
+  { day: "Mon", hours: 8.5 },
+  { day: "Tue", hours: 9.0 },
+  { day: "Wed", hours: 8.0 },
+  { day: "Thu", hours: 8.75 },
+  { day: "Fri", hours: 8.25 },
+  { day: "Sat", hours: 0 },
+  { day: "Sun", hours: 0 },
+];
+
+// Monthly attendance data
+const monthlyAttendanceData = [
+  { month: "Jan", attendance: 95 },
+  { month: "Feb", attendance: 92 },
+  { month: "Mar", attendance: 98 },
+  { month: "Apr", attendance: 94 },
+  { month: "May", attendance: 96 },
+  { month: "Jun", attendance: 93 },
+  { month: "Jul", attendance: 97 },
+  { month: "Aug", attendance: 95 },
+  { month: "Sep", attendance: 94 },
+  { month: "Oct", attendance: 96 },
+  { month: "Nov", attendance: 92 },
+  { month: "Dec", attendance: 95 },
 ];
 
 export default function EmployeeDashboard() {
@@ -327,6 +366,80 @@ export default function EmployeeDashboard() {
           </Card>
         </div>
       )}
+
+      {/* Attendance Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Weekly Attendance */}
+        <Card className="hrms-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-display flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-primary" />
+              Weekly Hours
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={weeklyAttendanceData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="day" className="text-xs" />
+                  <YAxis domain={[0, 10]} className="text-xs" tickFormatter={(value) => `${value}h`} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                    formatter={(value: number) => [`${value}h`, "Hours"]}
+                  />
+                  <Bar
+                    dataKey="hours"
+                    fill="hsl(var(--primary))"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Monthly Attendance */}
+        <Card className="hrms-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-display flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              Monthly Attendance
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={monthlyAttendanceData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="month" className="text-xs" />
+                  <YAxis domain={[80, 100]} className="text-xs" tickFormatter={(value) => `${value}%`} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                    formatter={(value: number) => [`${value}%`, "Attendance"]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="attendance"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                    dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 3 }}
+                    activeDot={{ r: 5, fill: "hsl(var(--primary))" }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Recent Activity */}
       <Card className="hrms-card">
