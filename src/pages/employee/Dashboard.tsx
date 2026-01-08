@@ -7,13 +7,13 @@ import { cn } from "@/lib/utils";
 import {
   Clock,
   Calendar,
-  CreditCard,
   Play,
   Pause,
   LogIn,
   LogOut,
   Coffee,
   FileText,
+  TrendingUp,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -299,38 +299,34 @@ export default function EmployeeDashboard() {
         </div>
       )}
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-3 gap-3 pt-2">
-        <Link to="/employee/attendance">
-          <Card className="hrms-card hover:shadow-md transition-all hover:scale-[1.02] cursor-pointer">
+      {/* Attendance Statistics - Only show when clocked in */}
+      {clockedIn && (
+        <div className="grid grid-cols-3 gap-3 pt-2">
+          <Card className="hrms-card">
             <CardContent className="p-4 text-center">
               <Clock className="h-5 w-5 text-primary mx-auto mb-2" />
-              <p className="text-2xl font-bold">18</p>
-              <p className="text-xs text-muted-foreground">Days Present</p>
+              <p className="text-2xl font-bold">{formatTimeShort(workingTime)}</p>
+              <p className="text-xs text-muted-foreground">Working Hours</p>
             </CardContent>
           </Card>
-        </Link>
-        
-        <Link to="/employee/leave">
-          <Card className="hrms-card hover:shadow-md transition-all hover:scale-[1.02] cursor-pointer">
+          
+          <Card className="hrms-card">
             <CardContent className="p-4 text-center">
-              <Calendar className="h-5 w-5 text-primary mx-auto mb-2" />
-              <p className="text-2xl font-bold">32</p>
-              <p className="text-xs text-muted-foreground">Leaves Left</p>
+              <Coffee className="h-5 w-5 text-warning mx-auto mb-2" />
+              <p className="text-2xl font-bold">{formatTimeShort(allBreakTime)}</p>
+              <p className="text-xs text-muted-foreground">Break Time</p>
             </CardContent>
           </Card>
-        </Link>
-        
-        <Link to="/employee/payroll">
-          <Card className="hrms-card hover:shadow-md transition-all hover:scale-[1.02] cursor-pointer">
+          
+          <Card className="hrms-card">
             <CardContent className="p-4 text-center">
-              <CreditCard className="h-5 w-5 text-primary mx-auto mb-2" />
-              <p className="text-2xl font-bold">₹85K</p>
-              <p className="text-xs text-muted-foreground">This Month</p>
+              <TrendingUp className="h-5 w-5 text-success mx-auto mb-2" />
+              <p className="text-2xl font-bold">8.5h</p>
+              <p className="text-xs text-muted-foreground">Avg Hours</p>
             </CardContent>
           </Card>
-        </Link>
-      </div>
+        </div>
+      )}
 
       {/* Recent Activity */}
       <Card className="hrms-card">
